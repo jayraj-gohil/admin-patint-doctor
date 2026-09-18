@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PATIENT
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CANCELLED
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  password     String
+  role         Role          @default(PATIENT)
+  createdAt    DateTime      @default(now())
+  appointments Appointment[]
+}
+
+model Doctor {
+  id             Int                  @id @default(autoincrement())
+  name           String
+  specialization String
+  createdAt      DateTime             @default(now())
+  availability   DoctorAvailability[]
+  appointments   Appointment[]
+  breaks         DoctorBreak[]
+}
+
+// A doctor can have multiple non-overlapping availability periods per day
+// (e.g. 09:00-13:00 and 14:00-17:00). Overlap is validated in the service layer.
+model DoctorAvailability {
+  id        Int       @id @default(autoincrement())
+  doctorId  Int
+  doctor    Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek DayOfWeek
+  startTime String // "HH:mm", 24h
+  endTime   String // "HH:mm", 24h
+
+  @@index([doctorId, dayOfWeek])
+}
+
+// A break blocks out part of a specific calendar date (not a recurring weekday)
+// for a doctor. Used to remove slots and trigger rescheduling of affected
+// appointments (see appointment.service.ts createBreak).
+model DoctorBreak {
+  id        Int      @id @default(autoincrement())
+  doctorId  Int
+  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  startTime String // "HH:mm", 24h
+  endTime   String // "HH:mm", 24h
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId, date])
+}
+
+// One row per (doctor, date, time) slot for its entire lifetime. Booking flips
+// a cancelled row back to BOOKED (or inserts a new row) atomically at the DB
+// level via an INSERT ... ON CONFLICT ... DO UPDATE ... WHERE guard (see
+// appointment.service.ts). This is what prevents two patients from ever both
+// booking the same slot, while still letting a cancelled slot be rebooked.
+model Appointment {
+  id        Int               @id @default(autoincrement())
+  doctorId  Int
+  doctor    Doctor            @relation(fields: [doctorId], references: [id])
+  patientId Int
+  patient   User              @relation(fields: [patientId], references: [id])
+  date      DateTime          @db.Date
+  time      String // "HH:mm"
+  status    AppointmentStatus @default(BOOKED)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([doctorId, date, time])
+  @@index([patientId])
+}
