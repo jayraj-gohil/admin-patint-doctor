@@ -12,7 +12,10 @@ import {
 } from "../../services/doctor.service";
 import { Alert } from "../../components/Alert";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Pagination } from "../../components/Pagination";
 import { IconTrash } from "../../components/Icons";
+
+const BREAKS_PAGE_SIZE = 5;
 
 const DAYS: DayOfWeek[] = [
   "MONDAY",
@@ -54,6 +57,14 @@ export function DoctorAvailability() {
   const [breakLoading, setBreakLoading] = useState(false);
   const [confirmAvailabilityId, setConfirmAvailabilityId] = useState<number | null>(null);
   const [confirmBreakId, setConfirmBreakId] = useState<number | null>(null);
+  const [breakPage, setBreakPage] = useState(1);
+
+  const breakTotalPages = Math.max(1, Math.ceil(breaks.length / BREAKS_PAGE_SIZE));
+  const breakCurrentPage = Math.min(breakPage, breakTotalPages);
+  const visibleBreaks = breaks.slice(
+    (breakCurrentPage - 1) * BREAKS_PAGE_SIZE,
+    breakCurrentPage * BREAKS_PAGE_SIZE
+  );
 
   async function load() {
     const [doctorData, availabilityData, breakData] = await Promise.all([
@@ -281,7 +292,7 @@ export function DoctorAvailability() {
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm divide-y divide-slate-100">
-          {breaks.map((b) => (
+          {visibleBreaks.map((b) => (
             <div key={b.id} className="flex items-center justify-between px-5 py-3">
               <p className="text-sm text-slate-700">
                 <span className="font-medium">{b.date.slice(0, 10)}</span> · {b.startTime} – {b.endTime}
@@ -295,6 +306,7 @@ export function DoctorAvailability() {
               </button>
             </div>
           ))}
+          <Pagination page={breakCurrentPage} totalPages={breakTotalPages} onChange={setBreakPage} />
         </div>
       )}
 
