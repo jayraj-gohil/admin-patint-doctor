@@ -13,7 +13,7 @@ import {
 import { Alert } from "../../components/Alert";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Pagination } from "../../components/Pagination";
-import { IconTrash } from "../../components/Icons";
+import { IconPlus, IconTrash } from "../../components/Icons";
 
 const BREAKS_PAGE_SIZE = 5;
 
@@ -197,8 +197,9 @@ export function DoctorAvailability() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-teal-600 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-teal-700 disabled:opacity-50 shadow-sm"
+          className="inline-flex items-center gap-2 bg-teal-600 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-teal-700 disabled:opacity-50 shadow-sm transition-colors"
         >
+          <IconPlus className="w-4 h-4" />
           {loading ? "Adding..." : "Add Availability"}
         </button>
       </form>
@@ -280,8 +281,9 @@ export function DoctorAvailability() {
         <button
           type="submit"
           disabled={breakLoading}
-          className="bg-slate-800 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-slate-900 disabled:opacity-50 shadow-sm"
+          className="inline-flex items-center gap-2 bg-slate-800 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-slate-900 disabled:opacity-50 shadow-sm transition-colors"
         >
+          <IconPlus className="w-4 h-4" />
           {breakLoading ? "Adding..." : "Add Break"}
         </button>
       </form>
